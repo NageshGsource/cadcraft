@@ -13,7 +13,7 @@ use web_sys::js_sys;
 /// The hidden file input (one at a time; a cancelled pick leaves it until the next one).
 const INPUT_ID: &str = "cadcraft_open_input";
 /// What the picker offers: the formats OPEN reads.
-const ACCEPT: &str = ".dxf,.dwg";
+const ACCEPT: &str = ".dxf,.dwg,.dwt";
 
 /// A file read in the browser (name, contents), or why it couldn't be read.
 type Upload = Result<(String, Vec<u8>), String>;
@@ -89,8 +89,25 @@ impl Inbox {
         let inbox = self.clone();
         wasm_bindgen_futures::spawn_local(async move {
             let r = match wasm_bindgen_futures::JsFuture::from(file.array_buffer()).await {
-                Ok(buf) => Ok((name, js_sys::Uint8Array::new(&buf).to_vec())),
+                Ok(buf) => with_dwg_converted(name, js_sys::Uint8Array::new(&buf).to_vec()).await,
                 Err(e) => Err(format!("Open: could not read {name}: {}", js_error(e))),
+            };
+            inbox.push(r);
+        });
+    }
+
+    /// Download the drawing at `url` in the background and open it (`?open=URL`); a DWG or DWT
+    /// goes through the DWG server like a picked one.
+    pub fn fetch_url(&self, url: String) {
+        let name = url.split(['?', '#']).next().and_then(|p| p.rsplit('/').next()).filter(|n| !n.is_empty()).unwrap_or("drawing.dxf").to_string();
+        let inbox = self.clone();
+        wasm_bindgen_futures::spawn_local(async move {
+            let r = match crate::dwg::get(&url).await {
+                Ok(bytes) => match CadApp::open_size_error(&name, bytes.len() as u64) {
+                    Some(e) => Err(e),
+                    None => with_dwg_converted(name, bytes).await,
+                },
+                Err(e) => Err(format!("Open: could not download {url}: {e}")),
             };
             inbox.push(r);
         });
@@ -130,4 +147,14 @@ impl Inbox {
 
 fn js_error(e: wasm_bindgen::JsValue) -> String {
     e.as_string().unwrap_or_else(|| format!("{e:?}"))
+}
+
+/// A DWG or DWT (by content) converted to DXF by the DWG server; anything else as it is. The name
+/// is kept, so saving the drawing again writes DWG (or DWT) through the server.
+async fn with_dwg_converted(name: String, bytes: Vec<u8>) -> Upload {
+    if !cadcraft_dwg::is_dwg(&bytes) {
+        return Ok((name, bytes));
+    }
+    let dxf = crate::dwg::to_dxf(&name, &bytes).await?;
+    Ok((name, dxf))
 }

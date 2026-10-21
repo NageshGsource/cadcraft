@@ -1,0 +1,20 @@
+[package]
+name = "quickplot-dwg-server"
+description = "QuickPlot DWG server: converts DWG/DWT to DXF and back for the web app, which can't read DWG itself"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "quickplot-dwg-server"
+path = "src/main.rs"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+cadcraft-dwg = { workspace = true }
+cadcraft-io = { workspace = true }
+# MIT OR Apache-2.0: a small synchronous HTTP/1.1 server.
+tiny_http = "0.12"

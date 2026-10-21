@@ -11,6 +11,26 @@
 > (MIT OR Apache-2.0). The web version opens and saves DXF; DWG is not available in the browser yet.
 > The documentation below comes from CADCraft and still uses its name.
 
+### DWG and DWT in the browser
+
+The web app opens and saves `.dwg` and `.dwt` through a small conversion server
+([`apps/quickplot-dwg-server`](apps/quickplot-dwg-server/src/main.rs)) that uses the same DWG code
+as the desktop app. Run it on your machine, then use QuickPlot as usual:
+
+```sh
+cargo run --release -p quickplot-dwg-server        # listens on http://127.0.0.1:8790
+```
+
+- Open a `.dwg`/`.dwt` with File > Open, drag and drop, or a link: `?open=https://…/plan.dwg`.
+  Try it: [open the sample DWG](https://nageshgsource.github.io/cadcraft/?open=samples/apartment.dwg).
+- Save or Save As with a `.dwg`/`.dwt` name downloads a DWG. If the server isn't running, you get a
+  `.dxf` instead, so nothing is lost.
+- Another server address: add `?dwg=https://your-server` to the page URL.
+- Chrome and Edge may ask to allow the page to reach your local network the first time; allow it.
+
+Server API: `POST /to-dxf` (DWG/DWT body → DXF), `POST /to-dwg?name=x.dwg|x.dwt` (DXF body →
+DWG/DWT), `GET /health`.
+
 ## Screenshots
 
 <table>

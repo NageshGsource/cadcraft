@@ -12,6 +12,8 @@
 #[cfg(target_arch = "wasm32")]
 pub mod download;
 #[cfg(target_arch = "wasm32")]
+mod dwg;
+#[cfg(target_arch = "wasm32")]
 mod host;
 
 #[cfg(target_arch = "wasm32")]
@@ -76,12 +78,12 @@ mod web {
         eframe::WebLogger::init(log::LevelFilter::Info).ok();
         cadcraft_engine::cmd::file::set_io(cadcraft_engine::cmd::file::IoHooks {
             read: |b, name| cadcraft_io::read(b, name).map_err(|e| e.to_string()),
-            write: |d, name| cadcraft_io::write(d, name).map_err(|e| e.to_string()),
+            // DWG/DWT are written as DXF here and converted by the DWG server on delivery (`dwg.rs`).
+            write: crate::dwg::write,
             plot: Some(|d, space, opts| cadcraft_io::plotter::plot(d, space, opts).map_err(|e| e.to_string())),
         });
-        cadcraft_engine::cmd::file::set_write_as(|d, name, o| {
-            cadcraft_io::write_with(d, name, &cadcraft_io::SaveOptions { version: o.version, binary: o.binary }).map_err(|e| e.to_string())
-        });
+        cadcraft_engine::cmd::file::set_write_as(crate::dwg::write_as);
+        crate::dwg::set_server(query_param("dwg"));
         // AutoLISP's entget, entmake and entmod see entities as DXF groups.
         cadcraft_engine::cmd::file::set_entity_codec(cadcraft_engine::cmd::file::EntityCodec {
             groups: cadcraft_io::entity_groups,
@@ -94,9 +96,9 @@ mod web {
         match &bridge {
             Some(bridge) => {
                 bridge.install();
-                cadcraft_engine::cmd::file::set_deliver(crate::host::deliver);
+                cadcraft_engine::cmd::file::set_deliver(crate::dwg::deliver_host);
             }
-            None => cadcraft_engine::cmd::file::set_deliver(crate::download::download),
+            None => cadcraft_engine::cmd::file::set_deliver(crate::dwg::deliver_download),
         }
         let app_bridge = bridge.clone();
         wasm_bindgen_futures::spawn_local(async move {
@@ -147,6 +149,10 @@ mod web {
                             picker.pick();
                             None
                         }));
+                        // `?open=URL`: open a drawing (DXF, DWG, DWT) from a link.
+                        if let Some(url) = query_param("open") {
+                            inbox.fetch_url(url);
+                        }
                         let host = app_bridge.map(|bridge| {
                             bridge.listen(inbox.clone());
                             bridge.post_ready();

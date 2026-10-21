@@ -51,6 +51,8 @@ pub const TABLE: &[(&str, Class)] = &[
     ("cli", Class::Exempt),
     ("web", Class::Exempt),
     ("xtask", Class::Exempt),
+    // The QuickPlot DWG conversion server (a binary, like the apps).
+    ("quickplot-dwg-server", Class::Exempt),
 ];
 
 /// Explicit orderings *within* a layer (earlier may be used by later).

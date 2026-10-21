@@ -17,6 +17,9 @@ path = "src/main.rs"
 cadcraft-engine = { workspace = true }
 cadcraft-ui-egui = { workspace = true }
 cadcraft-io = { workspace = true }
+# DWG/DWT through the QuickPlot DWG server (src/dwg.rs): the content check and the drawing type.
+cadcraft-dwg = { workspace = true }
+cadcraft-doc = { workspace = true }
 egui = { workspace = true }
 log = { workspace = true }
 serde_json = { workspace = true }
@@ -29,4 +32,4 @@ web-sys = { version = "0.3", features = ["HtmlInputElement", "FileList", "File"]
 eframe = { workspace = true, features = ["persistence", "default_fonts", "wgpu", "accesskit"] }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
-web-sys = { version = "0.3", features = ["Window", "Document", "Element", "HtmlElement", "HtmlCanvasElement", "HtmlAnchorElement", "Location", "Navigator", "Blob", "BlobPropertyBag", "Url", "MessageEvent", "UrlSearchParams", "MediaQueryList"] }
+web-sys = { version = "0.3", features = ["Window", "Document", "Element", "HtmlElement", "HtmlCanvasElement", "HtmlAnchorElement", "Location", "Navigator", "Blob", "BlobPropertyBag", "Url", "MessageEvent", "UrlSearchParams", "MediaQueryList", "RequestInit", "Response"] }
