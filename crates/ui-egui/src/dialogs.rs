@@ -326,7 +326,8 @@ fn about(ctx: &egui::Context, open: &mut bool) {
                 1 => crate::credits::contributors_ui(ui),
                 2 => crate::credits::models_ui(ui),
                 _ => {
-                    ui.heading("WebCAD");
+                    ui.heading("QuickPlot");
+                    ui.label(RichText::new("by Mapperty").strong().color(egui::Color32::from_rgb(0x3F, 0xA4, 0x24)));
                     ui.label(crate::tf!("Version {version}", version = env!("CARGO_PKG_VERSION")));
                     ui.label(crate::tl!("Computer-aided design and drafting: an open-source, clean-room CAD application written in pure Rust."));
                     ui.add_space(6.0);

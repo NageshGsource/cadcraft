@@ -70,8 +70,8 @@ pub fn title_and_toolbar(app: &mut CadApp, ui: &mut egui::Ui) {
         let r = ui.max_rect();
         if title_h > 0.0 {
             let title = match app.session.state() {
-                Ok(st) if !app.ui.start_tab => format!("WebCAD      {}{}", st.title, if st.title.contains('.') { "" } else { ".dwg" }),
-                _ => format!("WebCAD      {}", crate::tl!("Start")),
+                Ok(st) if !app.ui.start_tab => format!("QuickPlot      {}{}", st.title, if st.title.contains('.') { "" } else { ".dwg" }),
+                _ => format!("QuickPlot      {}", crate::tl!("Start")),
             };
             // Centred on the traffic lights' centre line (the row's middle): with the system font
             // the capitals' middle is the text box's middle, so no optical nudge.
@@ -526,9 +526,17 @@ pub fn start_page(app: &mut CadApp, ui: &mut egui::Ui) {
     let left = Rect::from_min_size(r.min, vec2(300.0, r.height()));
     p.rect_filled(left, 0.0, t.chrome_dark);
     p.rect_filled(Rect::from_min_max(pos2(left.right(), r.top()), r.max), 0.0, t.chrome);
-    p.text(pos2(left.left() + 34.0, left.top() + 70.0), egui::Align2::LEFT_CENTER, "WebCAD", egui::FontId::proportional(28.0), t.text);
+    p.text(pos2(left.left() + 34.0, left.top() + 62.0), egui::Align2::LEFT_CENTER, "QuickPlot", egui::FontId::proportional(28.0), t.text);
+    // Mapperty brand green (#3FA424).
     p.text(
-        pos2(left.left() + 34.0, left.top() + 98.0),
+        pos2(left.left() + 35.0, left.top() + 90.0),
+        egui::Align2::LEFT_CENTER,
+        "by Mapperty",
+        egui::FontId::proportional(14.0),
+        egui::Color32::from_rgb(0x3F, 0xA4, 0x24),
+    );
+    p.text(
+        pos2(left.left() + 34.0, left.top() + 114.0),
         egui::Align2::LEFT_CENTER,
         crate::tf!("Version {version}", version = env!("CARGO_PKG_VERSION")),
         crate::theme::small(),

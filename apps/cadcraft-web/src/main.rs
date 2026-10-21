@@ -116,8 +116,9 @@ mod web {
                     canvas,
                     options,
                     Box::new(move |cc| {
-                        // Embedded, the parent sends the drawing: start on the Start tab, not Drawing1.
-                        let session = if app_bridge.is_some() { Session::empty() } else { Session::new() };
+                        // Start on the QuickPlot Start tab (logo, Open, New, sample). `?sample` keeps
+                        // Drawing1 so the sample opens zoomed to fit; embedded, the parent sends the drawing.
+                        let session = if app_bridge.is_none() && query().contains("sample") { Session::new() } else { Session::empty() };
                         let mut app = CadApp::new(session, services());
                         app.system_languages =
                             web_sys::window().map(|w| w.navigator().languages().iter().filter_map(|v| v.as_string()).collect()).unwrap_or_default();
@@ -163,7 +164,7 @@ mod web {
                 match result {
                     Ok(()) => el.remove(),
                     Err(e) => {
-                        el.set_inner_html(&format!("<p>CADCraft failed to start: {e:?}</p><p>A browser with WebGPU or WebGL2 is required.</p>"))
+                        el.set_inner_html(&format!("<p>QuickPlot failed to start: {e:?}</p><p>A browser with WebGPU or WebGL2 is required.</p>"))
                     }
                 }
             }

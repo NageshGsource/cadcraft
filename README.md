@@ -1,13 +1,15 @@
-<h1 align="center">WebCAD</h1>
+<p align="center"><img alt="QuickPlot by Mapperty" src="docs/brand/quickplot-by-mapperty.svg" width="360"></p>
 
 <p align="center">
-  <b>Computer-aided design and drafting in the browser, built in pure Rust and WebAssembly.</b><br>
-  <a href="https://nageshgsource.github.io/cadcraft/"><b>Open WebCAD in your browser</b></a>
+  <b>CAD drafting in your browser.</b><br>
+  <a href="https://nageshgsource.github.io/cadcraft/"><b>Open QuickPlot</b></a> ·
+  <a href="https://nageshgsource.github.io/cadcraft/?sample"><b>Open with a sample drawing</b></a>
 </p>
 
 > [!NOTE]
-> WebCAD is a fork of [CADCraft](https://github.com/storytold/cadcraft) (MIT OR Apache-2.0).
-> The documentation below is inherited from CADCraft and still uses its name.
+> **Proof of concept.** QuickPlot by Mapperty is a fork of [CADCraft](https://github.com/storytold/cadcraft)
+> (MIT OR Apache-2.0). The web version opens and saves DXF; DWG is not available in the browser yet.
+> The documentation below comes from CADCraft and still uses its name.
 
 ## Screenshots
 

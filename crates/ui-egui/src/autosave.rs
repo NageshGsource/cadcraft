@@ -141,7 +141,7 @@ pub fn show(app: &mut CadApp, ctx: &egui::Context) {
         ui.set_width(460.0);
         ui.label(RichText::new("Drawing Recovery").strong());
         ui.add_space(4.0);
-        ui.label("WebCAD did not close normally. These drawings were autosaved:");
+        ui.label("QuickPlot did not close normally. These drawings were autosaved:");
         ui.add_space(6.0);
         egui::Grid::new("cc_recovery_list").num_columns(4).spacing(vec2(12.0, 6.0)).show(ui, |ui| {
             for (i, item) in app.recovery.items.iter().enumerate() {
