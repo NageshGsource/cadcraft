@@ -119,9 +119,9 @@ pub use cadcraft_engine::cmd::file::Version as SaveVersion;
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SaveFormat {
-    /// CADCraft's native format, and the default.
-    #[default]
     Dxf,
+    /// QuickPlot's default: the format AutoCAD users exchange (on the web, through the DWG server).
+    #[default]
     Dwg,
 }
 
@@ -374,7 +374,8 @@ impl CadApp {
             "theme": self.ui.theme.as_str(),
             "animations": self.ui.animations.as_str(),
             "interfaceLanguage": self.ui.interface_language.code(),
-            "saveFormat": self.ui.save_format.as_str(),
+            // Not `saveFormat`: that key held DXF, the old default, for everyone who never chose.
+            "defaultSaveFormat": self.ui.save_format.as_str(),
             "saveVersion": self.ui.save_version,
         });
         if self.spacemouse.settings != spacemouse::Settings::default() {
@@ -401,7 +402,7 @@ impl CadApp {
         if let Some(l) = v.get("interfaceLanguage").and_then(Value::as_str).and_then(i18n::Preference::parse) {
             self.ui.interface_language = l;
         }
-        if let Some(f) = v.get("saveFormat").and_then(Value::as_str).and_then(SaveFormat::parse) {
+        if let Some(f) = v.get("defaultSaveFormat").and_then(Value::as_str).and_then(SaveFormat::parse) {
             self.ui.save_format = f;
         }
         if let Some(v) = v.get("saveVersion").and_then(Value::as_str).and_then(SaveVersion::parse) {
@@ -816,7 +817,10 @@ mod tests {
         frame(&mut a, &ctx, None);
         assert_eq!(Tokens::get(), Tokens::of(theme::SYSTEM_FALLBACK), "no OS appearance: the documented fallback");
         assert_eq!(a.ui.theme, ThemePref::System);
-        assert_eq!(a.prefs_json(), r#"{"animations":"system","interfaceLanguage":"auto","saveFormat":"dxf","saveVersion":"2018","theme":"system"}"#);
+        assert_eq!(
+            a.prefs_json(),
+            r#"{"animations":"system","defaultSaveFormat":"dwg","interfaceLanguage":"auto","saveVersion":"2018","theme":"system"}"#
+        );
     }
 
     #[test]
@@ -838,7 +842,10 @@ mod tests {
     #[test]
     fn default_save_format_persists_and_names_new_drawings() {
         let mut a = app();
-        assert_eq!(a.ui.save_format, SaveFormat::Dxf, "default keeps DXF, CADCraft's native format");
+        assert_eq!(a.ui.save_format, SaveFormat::Dwg, "QuickPlot saves new drawings as DWG");
+        // Preferences from before DWG was the default (`saveFormat`: "dxf") don't bring DXF back.
+        a.load_prefs(r#"{"saveFormat": "dxf"}"#);
+        assert_eq!(a.ui.save_format, SaveFormat::Dwg);
         assert!(a.run("ui.saveformat", json!({ "format": "pdf" })).is_err());
         assert_eq!(a.run("ui.saveformat", json!({ "format": "DWG" })).ok(), Some(json!({ "saveFormat": "dwg" })));
         assert_eq!(a.run("ui.saveformat", json!({})).ok(), Some(json!({ "saveFormat": "dwg" })), "no format: report it");
@@ -846,11 +853,14 @@ mod tests {
         let mut b = app();
         b.load_prefs(&a.prefs_json());
         assert_eq!(b.ui.save_format, SaveFormat::Dwg);
-        b.load_prefs(r#"{"saveFormat": "svg"}"#);
+        b.load_prefs(r#"{"defaultSaveFormat": "svg"}"#);
         assert_eq!(b.ui.save_format, SaveFormat::Dwg);
         // The menu items reach the same setting, and resetting the palettes keeps it.
         b.start("ui.saveformat.dxf");
         assert_eq!(b.ui.save_format, SaveFormat::Dxf);
+        let mut c = app();
+        c.load_prefs(&b.prefs_json());
+        assert_eq!(c.ui.save_format, SaveFormat::Dxf, "an explicit DXF choice is kept");
         b.start("ui.saveformat.dwg");
         b.start("ui.resetpalettes");
         assert_eq!(b.ui.save_format, SaveFormat::Dwg);
