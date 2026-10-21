@@ -11,7 +11,7 @@
   
 <script type="module">
 import init, * as bindings from './cadcraft-web-e8b9f4a5fa707c4c.js';
-const wasm = await init({ module_or_path: './cadcraft-web-4148af5fc10617cc_bg.wasm' });
+const wasm = await init({ module_or_path: './cadcraft-web-da98b1902083c2f7_bg.wasm' });
 
 
 window.wasmBindings = bindings;
@@ -31,7 +31,7 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
     @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
     @media (prefers-reduced-motion: reduce) { .bar::after { animation: none; width: 100%; } }
   </style>
-<link rel="modulepreload" href="./cadcraft-web-e8b9f4a5fa707c4c.js" crossorigin="anonymous" integrity="sha384-vJ0TBjvNGsFJtFPK0snK9Geuwm1KT9Zlq2nmsiHQD8h0NJ3Xpai9GnsFuq12pE0H"><link rel="preload" href="./cadcraft-web-4148af5fc10617cc_bg.wasm" crossorigin="anonymous" integrity="sha384-seAru0LTFSx7hUIEizQy3z/9QPpj7NLKAooYpOASZGrsvxij9/gVYz+IHbTiwzQg" as="fetch" type="application/wasm"></head>
+<link rel="modulepreload" href="./cadcraft-web-e8b9f4a5fa707c4c.js" crossorigin="anonymous" integrity="sha384-vJ0TBjvNGsFJtFPK0snK9Geuwm1KT9Zlq2nmsiHQD8h0NJ3Xpai9GnsFuq12pE0H"><link rel="preload" href="./cadcraft-web-da98b1902083c2f7_bg.wasm" crossorigin="anonymous" integrity="sha384-pQpSFdyHJYIPf/QW3dbJQQqsli2suXhq8XbP9qQ5hxIxz4lQmPdb+UtVtowJ1u9h" as="fetch" type="application/wasm"></head>
 <body>
   <canvas id="cadcraft_canvas"></canvas>
   <div id="cadcraft_loading">
