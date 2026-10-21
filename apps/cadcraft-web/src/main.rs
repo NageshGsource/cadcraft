@@ -108,7 +108,7 @@ mod web {
                 return;
             };
             let mut options = eframe::WebOptions::default();
-            if query().contains("webgl")
+            if has_flag(&query(), "webgl")
                 && let eframe::egui_wgpu::WgpuSetup::CreateNew(create) = &mut options.wgpu_options.wgpu_setup
             {
                 create.instance_descriptor.backends = eframe::wgpu::Backends::GL;
@@ -120,7 +120,7 @@ mod web {
                     Box::new(move |cc| {
                         // Start on the QuickPlot Start tab (logo, Open, New, sample). `?sample` keeps
                         // Drawing1 so the sample opens zoomed to fit; embedded, the parent sends the drawing.
-                        let session = if app_bridge.is_none() && query().contains("sample") { Session::new() } else { Session::empty() };
+                        let session = if app_bridge.is_none() && has_flag(&query(), "sample") { Session::new() } else { Session::empty() };
                         let mut app = CadApp::new(session, services());
                         app.system_languages =
                             web_sys::window().map(|w| w.navigator().languages().iter().filter_map(|v| v.as_string()).collect()).unwrap_or_default();
@@ -138,7 +138,7 @@ mod web {
                             // viewports stay in the layout's display list.
                             app.set_wgpu(rs, None);
                         }
-                        if query().contains("sample") {
+                        if has_flag(&query(), "sample") {
                             let _ = app.run("ui.sample", serde_json::json!({}));
                         }
                         // No paths on the web: OPEN asks the browser's file picker, which reads the
@@ -181,7 +181,14 @@ mod web {
 /// True when the URL query (`?cpu&sample`) has a `cpu` flag: the CPU canvas path is requested.
 #[cfg(any(target_arch = "wasm32", test))]
 fn wants_cpu(query: &str) -> bool {
-    query.trim_start_matches('?').split('&').any(|p| p == "cpu" || p.starts_with("cpu="))
+    has_flag(query, "cpu")
+}
+
+/// True when the URL query has the parameter `name` (`?name` or `?name=…`), not merely the text:
+/// `?open=samples/plan.dwg` doesn't ask for the sample drawing.
+#[cfg(any(target_arch = "wasm32", test))]
+fn has_flag(query: &str, name: &str) -> bool {
+    query.trim_start_matches('?').split('&').any(|p| p == name || p.strip_prefix(name).is_some_and(|rest| rest.starts_with('=')))
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -200,6 +207,15 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::wants_cpu;
+
+    #[test]
+    fn flags_match_whole_parameters() {
+        use super::has_flag;
+        assert!(has_flag("?sample", "sample"));
+        assert!(has_flag("?webgl&sample=1", "sample"));
+        assert!(!has_flag("?open=samples/apartment.dwg", "sample"));
+        assert!(!has_flag("?samples", "sample"));
+    }
 
     #[test]
     fn cpu_flag_is_detected() {
