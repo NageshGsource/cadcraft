@@ -8,16 +8,20 @@
 //! - `POST /to-dwg?name=drawing.dwg` (or `.dwt`) with a DXF body answers the DWG (or template)
 //!   the desktop app would save ([`cadcraft_io::write`]).
 //! - `GET /health` answers `ok`.
+//! - With `--static DIR`, every other `GET` serves the built web app from `DIR` (`dist/web`), so
+//!   one address on the local network gives people both QuickPlot and DWG.
 //!
 //! Every answer carries CORS headers (and the Private Network Access one) so a page served from
 //! elsewhere, such as GitHub Pages, may call a server on the user's own machine.
 //!
-//! Usage: `quickplot-dwg-server [--addr 127.0.0.1:8790] [--allow-origin *]`
+//! Usage: `quickplot-dwg-server [--addr 127.0.0.1:8790] [--allow-origin *] [--static DIR]`
+//! (`--addr 0.0.0.0:8790` to serve the local network).
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
 #[cfg(not(target_arch = "wasm32"))]
 mod server {
     use std::io::Read as _;
+    use std::path::{Path, PathBuf};
 
     use tiny_http::{Header, Method, Request, Response, Server};
 
@@ -28,17 +32,27 @@ mod server {
     struct Options {
         addr: String,
         allow_origin: String,
+        /// The web app to serve (`--static`), canonicalized.
+        site: Option<PathBuf>,
     }
 
     fn options() -> Result<Options, String> {
-        let mut o = Options { addr: DEFAULT_ADDR.to_string(), allow_origin: "*".to_string() };
+        let mut o = Options { addr: DEFAULT_ADDR.to_string(), allow_origin: "*".to_string(), site: None };
         let mut args = std::env::args().skip(1);
         while let Some(a) = args.next() {
             match a.as_str() {
                 "--addr" => o.addr = args.next().ok_or("--addr needs HOST:PORT")?,
                 "--allow-origin" => o.allow_origin = args.next().ok_or("--allow-origin needs an origin or *")?,
+                "--static" => {
+                    let dir = args.next().ok_or("--static needs the web app's folder (dist/web)")?;
+                    let dir = std::fs::canonicalize(&dir).map_err(|e| format!("--static {dir}: {e}"))?;
+                    if !dir.join("index.html").is_file() {
+                        return Err(format!("--static {}: no index.html (build the web app first)", dir.display()));
+                    }
+                    o.site = Some(dir);
+                }
                 "-h" | "--help" => {
-                    return Err(format!("usage: quickplot-dwg-server [--addr {DEFAULT_ADDR}] [--allow-origin *]"));
+                    return Err(format!("usage: quickplot-dwg-server [--addr {DEFAULT_ADDR}] [--allow-origin *] [--static DIR]"));
                 }
                 other => return Err(format!("unknown argument `{other}` (try --help)")),
             }
@@ -62,15 +76,18 @@ mod server {
             }
         };
         eprintln!("quickplot-dwg-server listening on http://{} (CORS origin {})", o.addr, o.allow_origin);
+        if let Some(site) = &o.site {
+            eprintln!("serving the web app from {}", site.display());
+        }
         for req in server.incoming_requests() {
-            let origin = o.allow_origin.clone();
+            let (origin, site) = (o.allow_origin.clone(), o.site.clone());
             // One thread per request: a large conversion doesn't hold up the others.
-            std::thread::spawn(move || handle(req, &origin));
+            std::thread::spawn(move || handle(req, &origin, site.as_deref()));
         }
         0
     }
 
-    fn handle(mut req: Request, origin: &str) {
+    fn handle(mut req: Request, origin: &str, site: Option<&Path>) {
         let (path, query) = match req.url().split_once('?') {
             Some((p, q)) => (p.to_string(), q.to_string()),
             None => (req.url().to_string(), String::new()),
@@ -81,6 +98,7 @@ mod server {
             (Method::Get, "/health") => Reply::text(200, "ok"),
             (Method::Post, "/to-dxf") => body(&mut req).and_then(|b| guarded(|| to_dxf(&b))).unwrap_or_else(|e| e),
             (Method::Post, "/to-dwg") => body(&mut req).and_then(|b| guarded(|| to_dwg(&b, &query))).unwrap_or_else(|e| e),
+            (Method::Get | Method::Head, _) if site.is_some() => site.map_or_else(|| Reply::empty(404), |dir| file(dir, &path)),
             _ => Reply::text(404, "not found: use POST /to-dxf, POST /to-dwg?name=…, GET /health"),
         };
         eprintln!("{method} {path} -> {}", reply.status);
@@ -120,6 +138,41 @@ mod server {
     /// Run a conversion; a panic in a converter becomes an error reply, not a dead thread with no answer.
     fn guarded(f: impl FnOnce() -> Reply + std::panic::UnwindSafe) -> Result<Reply, Reply> {
         std::panic::catch_unwind(f).map_err(|_| Reply::text(500, "the converter failed on this file"))
+    }
+
+    /// A file of the web app. Only plain names below `dir` are served: no `..`, no hidden files.
+    fn file(dir: &Path, url_path: &str) -> Reply {
+        let rel = url_path.trim_start_matches('/');
+        let rel = if rel.is_empty() { "index.html" } else { rel };
+        let safe = rel.split('/').all(|seg| !seg.is_empty() && !seg.starts_with('.') && !seg.contains(['\\', ':']));
+        if !safe {
+            return Reply::text(404, "not found");
+        }
+        let path = dir.join(rel);
+        // The canonical path must still be inside the site (no links out of it).
+        match std::fs::canonicalize(&path) {
+            Ok(p) if p.starts_with(dir) && p.is_file() => match std::fs::read(&p) {
+                Ok(bytes) => Reply { status: 200, mime: mime(&p), bytes },
+                Err(_) => Reply::text(500, "could not read the file"),
+            },
+            _ => Reply::text(404, "not found"),
+        }
+    }
+
+    fn mime(p: &Path) -> &'static str {
+        match p.extension().and_then(|e| e.to_str()).map(str::to_ascii_lowercase).as_deref() {
+            Some("html") => "text/html; charset=utf-8",
+            Some("js") => "text/javascript; charset=utf-8",
+            // Browsers compile WebAssembly while it downloads only with this type.
+            Some("wasm") => "application/wasm",
+            Some("css") => "text/css; charset=utf-8",
+            Some("svg") => "image/svg+xml",
+            Some("png") => "image/png",
+            Some("json") => "application/json",
+            Some("dxf") => "application/dxf",
+            Some("dwg") | Some("dwt") => "application/acad",
+            _ => "application/octet-stream",
+        }
     }
 
     fn to_dxf(bytes: &[u8]) -> Reply {

@@ -7,7 +7,8 @@
 //!   DWG on. If the server can't be reached the drawing is delivered as DXF instead, so a save is
 //!   never lost.
 //!
-//! The server is `http://127.0.0.1:8790` unless the page URL names another with `?dwg=URL`.
+//! The server is the page's own address when the DWG server hosts QuickPlot (`--static`), else
+//! `http://127.0.0.1:8790`; `?dwg=URL` names another ([`set_server`]).
 
 use std::sync::OnceLock;
 
@@ -19,10 +20,22 @@ const DEFAULT_SERVER: &str = "http://127.0.0.1:8790";
 
 static SERVER: OnceLock<String> = OnceLock::new();
 
-/// Use `url` (from `?dwg=`) as the conversion server instead of the default.
+/// Use `url` (from `?dwg=`) as the conversion server. Without one: the page's own address when
+/// the DWG server serves QuickPlot itself (`--static`, e.g. on the local network), else the
+/// server on this computer (pages hosted elsewhere, such as GitHub Pages).
 pub fn set_server(url: Option<String>) {
-    let url = url.filter(|u| !u.trim().is_empty()).unwrap_or_else(|| DEFAULT_SERVER.to_string());
+    let url = url.filter(|u| !u.trim().is_empty()).or_else(own_origin).unwrap_or_else(|| DEFAULT_SERVER.to_string());
     let _ = SERVER.set(url.trim_end_matches('/').to_string());
+}
+
+/// The page's origin, unless it is a static host that can't convert DWG (GitHub Pages).
+fn own_origin() -> Option<String> {
+    let location = web_sys::window()?.location();
+    let host = location.hostname().ok()?;
+    if host.ends_with(".github.io") {
+        return None;
+    }
+    location.origin().ok().filter(|o| o.starts_with("http"))
 }
 
 fn server() -> &'static str {

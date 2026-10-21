@@ -28,6 +28,18 @@ cargo run --release -p quickplot-dwg-server        # listens on http://127.0.0.1
 - Another server address: add `?dwg=https://your-server` to the page URL.
 - Chrome and Edge may ask to allow the page to reach your local network the first time; allow it.
 
+**Host QuickPlot with DWG on your local network** (one address for everyone, no install for users):
+
+```sh
+cd apps/cadcraft-web && trunk build --release && cd ../..
+cargo run --release -p quickplot-dwg-server -- --addr 0.0.0.0:8790 --static dist/web
+```
+
+Then people open `http://<this-computer's-IP>:8790`. The page uses its own address as the DWG
+server, so Open and Save of `.dwg`/`.dwt` work for them too. On Windows, allow the port once in
+an administrator PowerShell:
+`New-NetFirewallRule -DisplayName "QuickPlot LAN 8790" -Direction Inbound -Protocol TCP -LocalPort 8790 -Action Allow -Profile Domain,Private`
+
 Server API: `POST /to-dxf` (DWG/DWT body → DXF), `POST /to-dwg?name=x.dwg|x.dwt` (DXF body →
 DWG/DWT), `GET /health`.
 
