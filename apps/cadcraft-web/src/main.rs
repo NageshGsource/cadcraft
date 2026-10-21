@@ -108,7 +108,7 @@ mod web {
                 return;
             };
             let mut options = eframe::WebOptions::default();
-            if has_flag(&query(), "webgl")
+            if crate::has_flag(&query(), "webgl")
                 && let eframe::egui_wgpu::WgpuSetup::CreateNew(create) = &mut options.wgpu_options.wgpu_setup
             {
                 create.instance_descriptor.backends = eframe::wgpu::Backends::GL;
@@ -120,7 +120,7 @@ mod web {
                     Box::new(move |cc| {
                         // Start on the QuickPlot Start tab (logo, Open, New, sample). `?sample` keeps
                         // Drawing1 so the sample opens zoomed to fit; embedded, the parent sends the drawing.
-                        let session = if app_bridge.is_none() && has_flag(&query(), "sample") { Session::new() } else { Session::empty() };
+                        let session = if app_bridge.is_none() && crate::has_flag(&query(), "sample") { Session::new() } else { Session::empty() };
                         let mut app = CadApp::new(session, services());
                         app.system_languages =
                             web_sys::window().map(|w| w.navigator().languages().iter().filter_map(|v| v.as_string()).collect()).unwrap_or_default();
@@ -138,7 +138,7 @@ mod web {
                             // viewports stay in the layout's display list.
                             app.set_wgpu(rs, None);
                         }
-                        if has_flag(&query(), "sample") {
+                        if crate::has_flag(&query(), "sample") {
                             let _ = app.run("ui.sample", serde_json::json!({}));
                         }
                         // No paths on the web: OPEN asks the browser's file picker, which reads the
