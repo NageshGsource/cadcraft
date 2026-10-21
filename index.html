@@ -3,11 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-  <title>WebCAD</title>
+  <title>QuickPlot by Mapperty</title>
+  <meta name="description" content="QuickPlot by Mapperty: CAD drafting in your browser.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;800&display=swap" rel="stylesheet">
   
 <script type="module">
 import init, * as bindings from './cadcraft-web-83ef12130363fac.js';
-const wasm = await init({ module_or_path: './cadcraft-web-7769795fbc197723_bg.wasm' });
+const wasm = await init({ module_or_path: './cadcraft-web-b7997dff74045257_bg.wasm' });
 
 
 window.wasmBindings = bindings;
@@ -19,12 +23,22 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
   <style>
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #22282f; }
     #cadcraft_canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-    #cadcraft_loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      color: #b8b8b8; font: 14px system-ui, sans-serif; pointer-events: none; }
+    #cadcraft_loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
+      background: #ffffff; color: #414651; font: 15px Figtree, Arial, sans-serif; pointer-events: none; }
+    #cadcraft_loading svg { width: min(360px, 80vw); height: auto; }
+    .bar { width: min(240px, 60vw); height: 4px; border-radius: 2px; background: #E6F7DB; overflow: hidden; }
+    .bar::after { content: ""; display: block; width: 40%; height: 100%; background: #3FA424; animation: slide 1.2s ease-in-out infinite; }
+    @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+    @media (prefers-reduced-motion: reduce) { .bar::after { animation: none; width: 100%; } }
   </style>
-<link rel="modulepreload" href="./cadcraft-web-83ef12130363fac.js" crossorigin="anonymous" integrity="sha384-eQzBri2rINKIUvHbLdwoZKUSNhGmGFa75Rtn3kAUvZlk2qWCHu314zIoilHm6b9q"><link rel="preload" href="./cadcraft-web-7769795fbc197723_bg.wasm" crossorigin="anonymous" integrity="sha384-DyXWQE1zAbLQ9Cvo6TE35KgU0bMSwCYhnXPaQJsnFJkfdHknG0L+v131Jk9jeN3x" as="fetch" type="application/wasm"></head>
+<link rel="modulepreload" href="./cadcraft-web-83ef12130363fac.js" crossorigin="anonymous" integrity="sha384-eQzBri2rINKIUvHbLdwoZKUSNhGmGFa75Rtn3kAUvZlk2qWCHu314zIoilHm6b9q"><link rel="preload" href="./cadcraft-web-b7997dff74045257_bg.wasm" crossorigin="anonymous" integrity="sha384-unXbrm7+T06/VJHZFUU8hSjXnfGUt3xBel5XnJeLsAv++/SGJ05ujorvYyI3rMDW" as="fetch" type="application/wasm"></head>
 <body>
   <canvas id="cadcraft_canvas"></canvas>
-  <div id="cadcraft_loading">Loading WebCAD&hellip;</div>
+  <div id="cadcraft_loading">
+    <!-- docs/brand/quickplot-by-mapperty.svg (Mapperty brand kit) -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="560" height="120" viewBox="0 0 560 120" role="img" aria-label="QuickPlot by Mapperty"><text x="0" y="62" font-family="Figtree, Arial, sans-serif" font-size="58" font-weight="800" fill="#181D27">QuickPlot</text><text x="2" y="104" font-family="Figtree, Arial, sans-serif" font-size="26" font-weight="600" fill="#3FA424">by Mapperty</text></svg>
+    <div class="bar"></div>
+    <div>Loading QuickPlot&hellip;</div>
+  </div>
 </body>
 </html>
